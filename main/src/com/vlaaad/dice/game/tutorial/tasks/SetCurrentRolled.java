@@ -40,12 +40,7 @@ public class SetCurrentRolled extends TutorialTask {
         PvePlayState playState = resources.get("playState");
         Creature current = playState.world.getController(RoundController.class).getCurrentCreature();
         Ability ability = Config.abilities.get(abilityName);
-        int idx = current.abilities.indexOf(ability, true);
-        if (idx == -1)
-            throw new IllegalStateException("no such ability in current creature");
-        for (int i = 0; i < current.probabilities.size; i++) {
-            current.probabilities.set(i, idx == i ? 1 : 0);
-        }
+        current.forceNextAbility(ability);
         callback.taskEnded();
     }
 }

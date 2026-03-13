@@ -34,7 +34,7 @@ public class SpeedDefenceProcessor extends AiDefaultProfessionAbilityProcessor {
     }
 
     @Override protected int preProcess(Creature creature, Ability ability) {
-        if (creature.getCurrentLevel() == 6)
+        if (creature.getCurrentLevel() >= 6)
             return -1;
         int dst = DistanceFiller.getDistanceToNearCreatureOfRelation(
             creature.world,

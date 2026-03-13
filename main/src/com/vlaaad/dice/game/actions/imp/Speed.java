@@ -40,6 +40,7 @@ import com.vlaaad.dice.game.world.World;
 import com.vlaaad.dice.game.world.behaviours.BehaviourRequest;
 import com.vlaaad.dice.game.world.behaviours.params.AbilityCoordinatesParams;
 import com.vlaaad.dice.game.world.controllers.BehaviourController;
+import com.vlaaad.dice.game.world.controllers.PveBehaviourController;
 import com.vlaaad.dice.game.world.controllers.ViewController;
 
 import java.util.Map;
@@ -123,7 +124,7 @@ public class Speed extends CreatureAction {
             });
             return;
         }
-        final Ability ability = creature.rollAbility();
+        final Ability ability = shouldUseOrderedRoll(creature, world) ? creature.rollOrderedAbility() : creature.rollRandomAbility();
         final RollResult roll = new RollResult(creature, ability);
         Logger.log("speed-roll for " + creature + ": " + ability);
         //visualize roll
@@ -139,5 +140,9 @@ public class Speed extends CreatureAction {
                 });
             }
         });
+    }
+
+    private boolean shouldUseOrderedRoll(Creature creature, World world) {
+        return creature.player == world.viewer && world.getController(BehaviourController.class) instanceof PveBehaviourController;
     }
 }

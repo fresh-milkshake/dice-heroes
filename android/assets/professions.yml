@@ -7,6 +7,7 @@ levels:
   - 33
   - 45
   - 60
+  - 75
 skills:
   - 5
   - 8
@@ -14,6 +15,7 @@ skills:
   - 12
   - 15
   - 17
+  - 19
 ---
 name: archer
 id: a
@@ -23,6 +25,7 @@ levels:
   - 65
   - 90
   - 120
+  - 150
 skills:
   - 9
   - 11
@@ -30,6 +33,7 @@ skills:
   - 13
   - 14
   - 16
+  - 18
 ---
 name: mage
 id: m
@@ -39,6 +43,7 @@ levels:
   - 42
   - 56
   - 71
+  - 86
 skills:
   - 9
   - 11
@@ -46,6 +51,7 @@ skills:
   - 13
   - 15
   - 18
+  - 21
 ---
 name: cleric
 id: c
@@ -55,6 +61,7 @@ levels:
   - 36
   - 47
   - 60
+  - 73
 skills:
   - 9
   - 11
@@ -62,6 +69,7 @@ skills:
   - 13
   - 15
   - 17
+  - 19
 ---
 name: shaman
 id: s
@@ -71,6 +79,7 @@ levels:
   - 42
   - 56
   - 71
+  - 86
 skills:
   - 9
   - 10
@@ -78,6 +87,7 @@ skills:
   - 12
   - 14
   - 16
+  - 18
 ---
 name: boss
 id: b

@@ -39,12 +39,7 @@ public class ConcentrationResult implements ITargetOwner, IActionResult {
     }
 
     @Override public void apply(World world) {
-        int idx = creature.abilities.indexOf(selectedAbility, true);
-        if (idx == -1)
-            throw new IllegalStateException("no such ability in current creature");
-        for (int i = 0; i < creature.probabilities.size; i++) {
-            creature.probabilities.set(i, idx == i ? 1 : 0);
-        }
+        creature.forceNextAbility(selectedAbility);
     }
 
     @Override public Creature getTarget() {

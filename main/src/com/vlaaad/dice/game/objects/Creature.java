@@ -98,6 +98,8 @@ public class Creature extends WorldObject implements Iterable<Ability> {
 
     public int gainedExp;
     private int currentIndex = 0;
+    private int nextOrderedIndex = 0;
+    private int forcedAbilityIndex = -1;
     private boolean killed;
     public final ObjectIntMap<Item> drop = new ObjectIntMap<Item>(0);
     public final String id;
@@ -194,6 +196,45 @@ public class Creature extends WorldObject implements Iterable<Ability> {
     }
 
     public Ability rollAbility() {
+        return rollRandomAbility();
+    }
+
+    public Ability rollRandomAbility() {
+        int idx = consumeForcedAbilityIndex();
+        if (idx == -1) {
+            idx = getRandomAbilityIndex();
+        }
+        updateProbabilities(idx);
+        currentIndex = idx;
+        return abilities.get(idx);
+    }
+
+    public Ability rollOrderedAbility() {
+        int idx = consumeForcedAbilityIndex();
+        if (idx == -1) {
+            idx = nextOrderedIndex;
+        }
+        currentIndex = idx;
+        nextOrderedIndex = (idx + 1) % abilities.size;
+        return abilities.get(idx);
+    }
+
+    public void forceNextAbility(Ability ability) {
+        int idx = abilities.indexOf(ability, true);
+        if (idx == -1)
+            throw new IllegalStateException("no such ability in current creature");
+        forcedAbilityIndex = idx;
+    }
+
+    private int consumeForcedAbilityIndex() {
+        if (forcedAbilityIndex == -1)
+            return -1;
+        int idx = forcedAbilityIndex;
+        forcedAbilityIndex = -1;
+        return idx;
+    }
+
+    private int getRandomAbilityIndex() {
         float total = 0f;
         for (int i = 0; i < probabilities.size; i++) {
             total += probabilities.get(i);
@@ -202,14 +243,15 @@ public class Creature extends WorldObject implements Iterable<Ability> {
         int idx;
         for (idx = 0; idx < probabilities.size; idx++) {
             random -= probabilities.get(idx);
-            // warning! do not use "<=" here
-            // we need it in SetCurrentRolled.java to force next rolled ability.
-            // random is zero inclusive, so if we rolled zero,
-            // and needed ability is not first,
-            // we can fail.
+            // warning! do not use "<=" here:
+            // random is zero inclusive, so the first slot must still be selectable.
             if (random < 0)
                 break;
         }
+        return idx;
+    }
+
+    private void updateProbabilities(int idx) {
         for (int i = 0; i < probabilities.size; i++) {
             if (i == idx) {
                 probabilities.set(i, 1f);
@@ -217,8 +259,6 @@ public class Creature extends WorldObject implements Iterable<Ability> {
                 probabilities.set(i, probabilities.get(i) + 4f);
             }
         }
-        currentIndex = idx;
-        return abilities.get(idx);
     }
 
     @Override

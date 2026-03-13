@@ -44,12 +44,7 @@ public class SetNextRolled extends TutorialTask {
         playState.world.dispatcher.add(RoundController.TURN_STARTED, new EventListener<Creature>() {
             @Override public void handle(EventType<Creature> type, Creature current) {
                 Ability ability = Config.abilities.get(abilityName);
-                int idx = current.abilities.indexOf(ability, true);
-                if (idx == -1)
-                    throw new IllegalStateException("no such ability in current creature");
-                for (int i = 0; i < current.probabilities.size; i++) {
-                    current.probabilities.set(i, idx == i ? 1 : 0);
-                }
+                current.forceNextAbility(ability);
                 playState.world.dispatcher.remove(RoundController.TURN_STARTED, this);
             }
         });

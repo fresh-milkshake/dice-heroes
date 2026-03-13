@@ -291,8 +291,7 @@ public class RoundController extends WorldController {
     }
 
     private void roll(final Creature creature) {
-
-        final Ability ability = creature.rollAbility();
+        final Ability ability = shouldUseOrderedRoll(creature) ? creature.rollOrderedAbility() : creature.rollRandomAbility();
         final RollResult roll = new RollResult(creature, ability);
 //        Logger.log("roll for " + creature + ": " + ability);
         //visualize roll
@@ -302,6 +301,10 @@ public class RoundController extends WorldController {
                 useAbility(creature, ability);
             }
         });
+    }
+
+    private boolean shouldUseOrderedRoll(Creature creature) {
+        return creature.player == world.viewer && world.getController(BehaviourController.class) instanceof PveBehaviourController;
     }
 
     private void useAbility(final Creature creature, final Ability ability) {
