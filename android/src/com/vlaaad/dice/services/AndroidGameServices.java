@@ -18,56 +18,32 @@
 
 package com.vlaaad.dice.services;
 
-import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Preferences;
 import com.vlaaad.common.util.IStateDispatcher;
 import com.vlaaad.common.util.StateDispatcher;
 import com.vlaaad.common.util.futures.Future;
 import com.vlaaad.common.util.futures.IFuture;
-import com.vlaaad.dice.api.services.cloud.ICloudSave;
-import com.vlaaad.dice.api.services.achievements.IGameAchievements;
-import com.vlaaad.dice.api.services.IGameServices;
 import com.vlaaad.dice.ServicesState;
+import com.vlaaad.dice.api.services.IGameServices;
+import com.vlaaad.dice.api.services.achievements.IGameAchievements;
+import com.vlaaad.dice.api.services.cloud.ICloudSave;
 import com.vlaaad.dice.api.services.multiplayer.IMultiplayer;
-import com.vlaaad.dice.ui.windows.MessageWindow;
 
-/**
- * Created 18.05.14 by vlaaad
- */
-public class LocalGameServices implements IGameServices {
+public class AndroidGameServices implements IGameServices {
 
-    public static final String KEY = "signed-in";
-    private final Lwjgl3Preferences prefs;
-    private IGameAchievements achievements = new LocalAchievements();
     private final StateDispatcher<ServicesState> dispatcher = new StateDispatcher<ServicesState>(ServicesState.DISCONNECTED);
-    private ICloudSave cloudSave = new LocalCloudSave();
-    private IMultiplayer multiplayer = new LocalMultiplayer();
-
-    public LocalGameServices() {
-        prefs = new Lwjgl3Preferences("dice.local.game-services", ".prefs/");
-        dispatcher.setState(ServicesState.valueOf(prefs.getString(KEY, ServicesState.DISCONNECTED.toString())));
-    }
+    private final ICloudSave cloudSave = new AndroidNoOpCloudSave();
+    private final IMultiplayer multiplayer = new AndroidNoOpMultiplayer();
 
     @Override public boolean isSupported() {
-        return true;
+        return false;
     }
 
-    @Override public void signIn() {
-        signedIn(ServicesState.CONNECTED);
-    }
+    @Override public void signIn() {}
 
-    @Override public void signOut() {
-        signedIn(ServicesState.DISCONNECTED);
-    }
-
-    private void signedIn(ServicesState state) {
-        if (dispatcher.setState(state)) {
-            prefs.putString(KEY, state.toString());
-            prefs.flush();
-        }
-    }
+    @Override public void signOut() {}
 
     @Override public boolean isSignedIn() {
-        return dispatcher.getState() == ServicesState.CONNECTED;
+        return false;
     }
 
     @Override public IStateDispatcher<ServicesState> dispatcher() {
@@ -75,22 +51,20 @@ public class LocalGameServices implements IGameServices {
     }
 
     @Override public IGameAchievements gameAchievements() {
-        return isSignedIn() ? achievements : null;
+        return IGameAchievements.NONE;
     }
 
     @Override public ICloudSave cloudSave() {
-        return isSignedIn() ? cloudSave : null;
+        return cloudSave;
     }
 
     @Override public IMultiplayer multiplayer() {
-        return isSignedIn() ? multiplayer : null;
+        return multiplayer;
     }
 
-    @Override public void showLeaderboard(String leaderboardId) {
-        new MessageWindow().show("leaderboard!");
-    }
+    @Override public void showLeaderboard(String leaderboardId) {}
 
     @Override public IFuture<Boolean> incrementScore(String leaderboardId, int by) {
-        return Future.completed();
+        return Future.completed(false);
     }
 }

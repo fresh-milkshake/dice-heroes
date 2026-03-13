@@ -18,26 +18,10 @@
 
 package com.vlaaad.dice.services;
 
-import com.google.android.gms.games.multiplayer.Participant;
-import com.vlaaad.dice.api.services.multiplayer.IParticipant;
+import com.vlaaad.dice.api.services.cloud.ICloudSave;
+import com.vlaaad.dice.api.services.cloud.IConflictResolver;
+import com.vlaaad.dice.game.user.UserData;
 
-/**
- * Created 26.07.14 by vlaaad
- */
-public class MultiplayerParticipant implements IParticipant {
-    public final Participant participant;
-
-    public MultiplayerParticipant(Participant participant) {
-        this.participant = participant;
-    }
-
-    @Override public String getDisplayedName() {
-        return participant.getDisplayName();
-    }
-    @Override public String getImageUrl() {
-        return participant.getIconImageUrl();
-    }
-    @Override public String getId() {
-        return participant.getParticipantId();
-    }
+public class AndroidNoOpCloudSave implements ICloudSave {
+    @Override public void sync(UserData userData, IConflictResolver resolver) {}
 }

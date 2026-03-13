@@ -30,6 +30,8 @@ import com.vlaaad.dice.api.services.multiplayer.IMultiplayer;
  */
 public interface IGameServices {
 
+    boolean isSupported();
+
     public void signIn();
 
     public void signOut();

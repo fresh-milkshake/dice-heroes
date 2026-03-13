@@ -25,5 +25,4 @@ Alternatively, you can import cloned repository in Intellij IDEA and run `deskto
 1. Code is under [GNU GPLv3](https://gnu.org/licenses/gpl.html) ([tl;dr](https://tldrlegal.com/license/gnu-general-public-license-v3-%28gpl-3%29)).
 2. Images are under [Creative Commons Attribution 4.0 License](https://creativecommons.org/licenses/by/4.0/legalcode) ([tl;dr](https://tldrlegal.com/license/creative-commons-attribution-4.0-international-%28cc-by-4%29)).
 3. Sound licenses:
-  - `map.mp3` and `ambient-battle.mp3` have `All Rights Reserved` license: do not distribute these sounds. Please contact [Sagamor](mailto:a.sukhotin@gmail.com)  (he is author) for further details.
-  - all other sounds are taken from [freesound.org](http://freesound.org/) and modified in audacity, please help me find original authors to give them proper credits.
+  - all sounds in this repository are taken from [freesound.org](http://freesound.org/) and modified in audacity, please help me find original authors to give them proper credits.

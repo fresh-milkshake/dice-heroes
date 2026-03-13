@@ -178,6 +178,10 @@ public class DiceHeroes extends App {
     }
 
     private void playPvpLevel(PvpLevelDescription level) {
+        if (!Config.mobileApi.services().isSupported()) {
+            Logger.debug("ignoring pvp level because online services are not supported");
+            return;
+        }
         PvpMode mode = level.getMode();
         PvpMode.Type type = mode.type;
         switch (type) {

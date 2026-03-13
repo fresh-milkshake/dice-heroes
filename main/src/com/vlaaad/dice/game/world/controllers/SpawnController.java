@@ -35,6 +35,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.ObjectSet;
 import com.badlogic.gdx.utils.Pools;
+import com.vlaaad.common.gdx.scene2d.events.ResizeListener;
 import com.vlaaad.common.tutorial.Tutorial;
 import com.vlaaad.common.ui.WindowManager;
 import com.vlaaad.common.util.Grid2D;
@@ -52,6 +53,7 @@ import com.vlaaad.dice.game.world.events.EventType;
 import com.vlaaad.dice.game.world.players.Fraction;
 import com.vlaaad.dice.game.world.view.WorldObjectView;
 import com.vlaaad.dice.managers.SoundManager;
+import com.vlaaad.dice.util.SafeArea;
 import com.vlaaad.dice.ui.scene2d.LocTextButton;
 import com.vlaaad.dice.ui.windows.CreatureInfoWindow;
 
@@ -76,6 +78,11 @@ public class SpawnController extends WorldController {
     private boolean scrollingEnabled;
     private Array<Creature> creatures;
     private Container autoPlaceContainer;
+    private final ResizeListener resizeListener = new ResizeListener() {
+        @Override protected void resize() {
+            layoutControls(false);
+        }
+    };
 
     public SpawnController(World world) {
         super(world);
@@ -138,14 +145,9 @@ public class SpawnController extends WorldController {
 
         viewController = world.getController(ViewController.class);
 
+        world.stage.addListener(resizeListener);
         world.stage.addActor(startButton);
-        startButton.setPosition(
-                world.stage.getWidth() / 2 - startButton.getPrefWidth() / 2,
-                world.stage.getHeight() + startButton.getPrefHeight()
-        );
         world.stage.addActor(table);
-        table.setPosition(world.stage.getWidth() / 2 - table.getWidth() / 2, 0);
-        refreshStartButton();
         if (creatures.size > 1 && !world.viewer.tutorialProvider.isInitiativeTutorialCompleted()) {
             table.invalidate();
             table.validate();
@@ -159,8 +161,8 @@ public class SpawnController extends WorldController {
         }
         autoPlaceContainer = new Container(autoPlaceButton);
         autoPlaceContainer.setFillParent(true);
-        autoPlaceContainer.top().right().pad(4);
         world.stage.addActor(autoPlaceContainer);
+        layoutControls(false);
         autoPlaceButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
                 autoPlace();
@@ -223,6 +225,7 @@ public class SpawnController extends WorldController {
     }
 
     @Override protected void stop() {
+        world.stage.removeListener(resizeListener);
         table.remove();
         startButton.remove();
         autoPlaceContainer.remove();
@@ -440,19 +443,43 @@ public class SpawnController extends WorldController {
         startButton.clearActions();
         if (placed.size == 0) {
             startButton.addAction(Actions.moveTo(
-                    world.stage.getWidth() / 2 - startButton.getWidth() / 2,
-                    world.stage.getHeight() + startButton.getHeight(),
+                    getStartButtonX(),
+                    getHiddenStartButtonY(),
                     0.5f,
                     Interpolation.swingIn
             ));
         } else {
             startButton.addAction(Actions.moveTo(
-                    world.stage.getWidth() / 2 - startButton.getWidth() / 2,
-                    world.stage.getHeight() - startButton.getHeight() - 4,
+                    getStartButtonX(),
+                    getVisibleStartButtonY(),
                     0.5f,
                     Interpolation.swingOut
             ));
         }
+    }
+
+    private void layoutControls(boolean animateStartButton) {
+        table.setSize(world.stage.getWidth(), table.getPrefHeight());
+        table.setPosition(world.stage.getWidth() / 2 - table.getWidth() / 2, SafeArea.bottom(world.stage));
+        autoPlaceContainer.top().right().padTop(4 + SafeArea.top(world.stage)).padRight(4 + SafeArea.right(world.stage));
+        autoPlaceContainer.invalidateHierarchy();
+        if (animateStartButton) {
+            refreshStartButton();
+        } else {
+            startButton.setPosition(getStartButtonX(), placed.size == 0 ? getHiddenStartButtonY() : getVisibleStartButtonY());
+        }
+    }
+
+    private float getStartButtonX() {
+        return world.stage.getWidth() / 2 - startButton.getWidth() / 2;
+    }
+
+    private float getHiddenStartButtonY() {
+        return world.stage.getHeight() + startButton.getHeight();
+    }
+
+    private float getVisibleStartButtonY() {
+        return world.stage.getHeight() - SafeArea.top(world.stage) - startButton.getHeight() - 4;
     }
 
     public Actor getDieIconToSpawn(Die die) {

@@ -170,10 +170,6 @@ public class PvpPlayState extends State {
 
     @Override protected void dispose(boolean isStateChange, Stage stage) {
         Config.mobileApi.keepScreenOn(false);
-        if (stage != null)
-            SoundManager.instance.stopMusicBeautifully("ambient-battle", stage);
-        else
-            SoundManager.instance.stopMusic("ambient-battle");
         Gdx.app.postRunnable(new Runnable() {
             @Override public void run() {
                 Logger.debug("disconnect because disposing");
