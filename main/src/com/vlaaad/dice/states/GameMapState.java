@@ -49,6 +49,7 @@ import com.vlaaad.dice.ServicesState;
 import com.vlaaad.dice.game.config.items.Item;
 import com.vlaaad.dice.game.config.levels.BaseLevelDescription;
 import com.vlaaad.dice.game.config.levels.LevelDescription;
+import com.vlaaad.dice.game.config.levels.PvpLevelDescription;
 import com.vlaaad.dice.game.config.purchases.PurchaseInfo;
 import com.vlaaad.dice.game.config.rewards.Reward;
 import com.vlaaad.dice.game.config.rewards.results.RewardResult;
@@ -68,6 +69,7 @@ import com.vlaaad.dice.ui.scene2d.LocImage;
 import com.vlaaad.dice.ui.scene2d.LocLabel;
 import com.vlaaad.dice.ui.util.AnimationHelper;
 import com.vlaaad.dice.ui.windows.*;
+import com.vlaaad.dice.util.SafeArea;
 import com.vlaaad.dice.util.SoundHelper;
 import org.yaml.snakeyaml.Yaml;
 
@@ -167,7 +169,7 @@ public class GameMapState extends State {
 
     private void refreshAvailableLevels() {
         for (BaseLevelDescription level : Config.levels) {
-            if (level.hidden)
+            if (shouldHideLevel(level))
                 continue;
             Image image = buttonsByLevel.get(level);
             Actor label = countersByLevel.get(level);
@@ -194,11 +196,7 @@ public class GameMapState extends State {
         addPotionsButton();
         stage.addListener(new ResizeListener() {
             @Override protected void resize() {
-                topBackground.setSize(stage.getWidth(), topBackground.getPrefHeight());
-                topBackground.setY(stage.getHeight() - topBackground.getHeight());
-                diceWindowButton.setPosition(stage.getWidth() / 2 - diceWindowButton.getWidth() / 2, stage.getHeight() - diceWindowButton.getHeight());
-                potionsButton.setPosition(diceWindowButton.getX() + diceWindowButton.getWidth() + 2, stage.getHeight() - potionsButton.getHeight());
-                settingsButton.setPosition(stage.getWidth() - settingsButton.getWidth(), stage.getHeight() - 12 - settingsButton.getHeight() / 2);
+                layoutChrome();
                 pane.setSize(stage.getWidth(), stage.getHeight());
                 pane.layout();
                 pane.updateVisualScroll();
@@ -328,13 +326,22 @@ public class GameMapState extends State {
 
     @SuppressWarnings("unchecked")
     private void addGameServicesButtons() {
+        if (!Config.mobileApi.services().isSupported())
+            return;
         final Table table = new Table(Config.skin);
         table.setFillParent(true);
         table.bottom().left();
+        table.padBottom(SafeArea.bottom(stage)).padLeft(SafeArea.left(stage));
         final Table content = new Table();
         content.left();
         table.add(content).expandX().fillX().height(22);
         stage.addActor(table);
+        stage.addListener(new ResizeListener() {
+            @Override protected void resize() {
+                table.padBottom(SafeArea.bottom(stage)).padLeft(SafeArea.left(stage));
+                table.invalidateHierarchy();
+            }
+        });
         Config.mobileApi.services().dispatcher().addListener(new IStateDispatcher.Listener<ServicesState>() {
             final Ref<ActorGestureListener> listenerVar = new Ref<ActorGestureListener>();
             final Table iconContainer = new Table();
@@ -367,6 +374,7 @@ public class GameMapState extends State {
                     stage.getRoot().addActorBefore(table, iconContainer);
                     iconContainer.clearChildren();
                     iconContainer.bottom().setFillParent(true);
+                    iconContainer.padBottom(SafeArea.bottom(stage)).padLeft(SafeArea.left(stage));
                     Table icons = new Table(Config.skin);
                     icons.left().setBackground(Config.skin.newDrawable("particle-white-pixel", new Color(0, 0, 0, 0.25f)));
                     icons.defaults().padBottom(-2);
@@ -498,7 +506,7 @@ public class GameMapState extends State {
     private void addDiceButton() {
         diceWindowButton = new Button(Config.skin, "dice");
         SoundHelper.initButton(diceWindowButton);
-        diceWindowButton.setPosition(stage.getWidth() / 2 - diceWindowButton.getWidth() / 2, stage.getHeight() - diceWindowButton.getHeight());
+        diceWindowButton.setPosition(stage.getWidth() / 2 - diceWindowButton.getWidth() / 2, stage.getHeight() - SafeArea.top(stage) - diceWindowButton.getHeight());
         stage.addActor(diceWindowButton);
         diceWindowButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
@@ -516,7 +524,7 @@ public class GameMapState extends State {
     private void addPotionsButton() {
         potionsButton = new Button(Config.skin, "potions");
         SoundHelper.initButton(potionsButton);
-        potionsButton.setPosition(diceWindowButton.getX() + diceWindowButton.getWidth() + 2, stage.getHeight() - potionsButton.getHeight());
+        potionsButton.setPosition(diceWindowButton.getX() + diceWindowButton.getWidth() + 2, stage.getHeight() - SafeArea.top(stage) - potionsButton.getHeight());
         stage.addActor(potionsButton);
         potionsButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
@@ -546,7 +554,10 @@ public class GameMapState extends State {
     private void addSettingsButton() {
         settingsButton = new Button(Config.skin, "settings");
         SoundHelper.initButton(settingsButton);
-        settingsButton.setPosition(stage.getWidth() - settingsButton.getWidth(), stage.getHeight() - 12 - settingsButton.getHeight() / 2);
+        settingsButton.setPosition(
+            stage.getWidth() - SafeArea.right(stage) - settingsButton.getWidth(),
+            stage.getHeight() - SafeArea.top(stage) - 12 - settingsButton.getHeight() / 2
+        );
         stage.addActor(settingsButton);
         settingsButton.addListener(new ChangeListener() {
             @Override public void changed(ChangeEvent event, Actor actor) {
@@ -561,12 +572,13 @@ public class GameMapState extends State {
 
     private void addItems() {
         topBackground = new Image(new TiledDrawable(Config.skin.getRegion("ui-top-background")));
-        topBackground.setSize(stage.getWidth(), topBackground.getPrefHeight());
+        topBackground.setSize(stage.getWidth(), topBackground.getPrefHeight() + SafeArea.top(stage));
         topBackground.setY(stage.getHeight() - topBackground.getHeight());
 
         itemTable = new Table(Config.skin);
         itemTable.setFillParent(true);
         itemTable.align(Align.top | Align.left);
+        itemTable.padTop(SafeArea.top(stage)).padLeft(SafeArea.left(stage));
         Array<Item> items = new Array<Item>();
         for (Item item : Config.items) {
             items.add(item);
@@ -626,7 +638,7 @@ public class GameMapState extends State {
 
 
         for (BaseLevelDescription level : Config.levels) {
-            if (level.hidden)
+            if (shouldHideLevel(level))
                 continue;
             Table table = new Table();
             Image button = new Image(Config.skin.getDrawable("ui/level-icon/unknown"));
@@ -692,6 +704,11 @@ public class GameMapState extends State {
             return;
         availableToCenterLevels.clear();
         userData.getAvailableLevels(availableToCenterLevels);
+        for (int i = availableToCenterLevels.size - 1; i >= 0; i--) {
+            if (shouldHideLevel(availableToCenterLevels.get(i))) {
+                availableToCenterLevels.removeIndex(i);
+            }
+        }
         BaseLevelDescription centered = null;
         if (availableToCenterLevels.size == 1) {
             centered = availableToCenterLevels.first();
@@ -711,7 +728,7 @@ public class GameMapState extends State {
         if (centered == null) centered = userData.getLastPassedLevel();
         if (centered == null) {
             for (BaseLevelDescription level : Config.levels) {
-                if (level.parent == null) {
+                if (!shouldHideLevel(level) && level.parent == null) {
                     centered = level;
                     break;
                 }
@@ -723,11 +740,31 @@ public class GameMapState extends State {
     }
 
     public void centerOnLevel(BaseLevelDescription level, boolean immediately) {
+        if (level == null || shouldHideLevel(level))
+            return;
         pane.layout();
         float x = level.iconX - stage.getWidth() / 2;
         float y = level.iconY - stage.getHeight() / 2;
         pane.scrollTo(x, y, stage.getWidth(), stage.getHeight());
         if (immediately) pane.updateVisualScroll();
+    }
+
+    private void layoutChrome() {
+        float topInset = SafeArea.top(stage);
+        topBackground.setSize(stage.getWidth(), topBackground.getPrefHeight() + topInset);
+        topBackground.setY(stage.getHeight() - topBackground.getHeight());
+        itemTable.padTop(topInset).padLeft(SafeArea.left(stage));
+        itemTable.invalidateHierarchy();
+        diceWindowButton.setPosition(stage.getWidth() / 2 - diceWindowButton.getWidth() / 2, stage.getHeight() - topInset - diceWindowButton.getHeight());
+        potionsButton.setPosition(diceWindowButton.getX() + diceWindowButton.getWidth() + 2, stage.getHeight() - topInset - potionsButton.getHeight());
+        settingsButton.setPosition(
+            stage.getWidth() - SafeArea.right(stage) - settingsButton.getWidth(),
+            stage.getHeight() - topInset - 12 - settingsButton.getHeight() / 2
+        );
+    }
+
+    private boolean shouldHideLevel(BaseLevelDescription level) {
+        return level.hidden || (!Config.mobileApi.services().isSupported() && level instanceof PvpLevelDescription);
     }
 
     private EventListener createStartLevelListener(final BaseLevelDescription level) {
@@ -741,9 +778,6 @@ public class GameMapState extends State {
     }
 
     @Override protected void resume(boolean isStateChange) {
-        if (isStateChange) {
-            SoundManager.instance.playMusicBeautifully("map", stage);
-        }
         if (shouldCenter) {
             centerOnLevel(false);
             shouldCenter = false;
@@ -755,15 +789,7 @@ public class GameMapState extends State {
 
     }
 
-    @Override protected void pause(boolean isStateChange, Stage stage) {
-        if (isStateChange) {
-            if (stage != null) {
-                SoundManager.instance.stopMusicBeautifully("map", stage);
-            } else {
-                SoundManager.instance.stopMusic("map");
-            }
-        }
-    }
+    @Override protected void pause(boolean isStateChange, Stage stage) {}
 
     @Override protected void onBackPressed() {
         if (exitWindow.isShown()) {

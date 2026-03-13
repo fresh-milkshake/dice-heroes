@@ -140,7 +140,6 @@ public class PvePlayState extends State {
 //            });
         }
         setState(state);
-        SoundManager.instance.playMusicBeautifully("ambient-battle", stage);
     }
 
     @Override protected Color getBackgroundColor() {
@@ -154,10 +153,6 @@ public class PvePlayState extends State {
     }
 
     @Override protected void dispose(boolean isStateChange, Stage stage) {
-        if (stage != null)
-            SoundManager.instance.stopMusicBeautifully("ambient-battle", stage);
-        else
-            SoundManager.instance.stopMusic("ambient-battle");
         Gdx.app.postRunnable(new Runnable() {
             @Override public void run() {
                 PvePlayState.this.stage.dispose();

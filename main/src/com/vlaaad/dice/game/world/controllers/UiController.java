@@ -30,6 +30,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.Pool;
+import com.vlaaad.common.gdx.scene2d.events.ResizeListener;
 import com.vlaaad.common.util.MapHelper;
 import com.vlaaad.dice.Config;
 import com.vlaaad.dice.game.config.abilities.Ability;
@@ -40,6 +41,7 @@ import com.vlaaad.dice.game.world.World;
 import com.vlaaad.dice.game.world.WorldController;
 import com.vlaaad.dice.game.world.events.EventListener;
 import com.vlaaad.dice.game.world.events.EventType;
+import com.vlaaad.dice.util.SafeArea;
 import com.vlaaad.dice.ui.components.ProfessionAbilityIcon;
 import com.vlaaad.dice.ui.scene2d.LocLabel;
 import com.vlaaad.dice.ui.windows.CreatureQueueWindow;
@@ -58,6 +60,11 @@ public class UiController extends WorldController {
     private final Table content;
     private boolean shouldUpdateNext;
     public final Button potionsButton = new Button(Config.skin, "game-potions");
+    private final ResizeListener resizeListener = new ResizeListener() {
+        @Override protected void resize() {
+            layoutSafeArea();
+        }
+    };
 
     public UiController(World world) {
         super(world);
@@ -92,6 +99,7 @@ public class UiController extends WorldController {
         if (world.viewer.hasPotions()) {
             potions.setActor(potionsButton);
         }
+        world.stage.addListener(resizeListener);
         world.dispatcher.add(RoundController.PRE_START, new EventListener<RoundController>() {
             @Override public void handle(EventType<RoundController> type, RoundController controller) {
                 world.dispatcher.remove(RoundController.PRE_START, this);
@@ -100,6 +108,7 @@ public class UiController extends WorldController {
         });
         world.stage.addActor(table);
         world.stage.addActor(potions);
+        layoutSafeArea();
         world.dispatcher.add(RoundController.TURN_STARTED, onTurn);
         world.dispatcher.add(RoundController.TURN_ENDED, onTurn);
         world.dispatcher.add(RoundController.PRE_START, onPreStart);
@@ -107,6 +116,7 @@ public class UiController extends WorldController {
     }
 
     @Override protected void stop() {
+        world.stage.removeListener(resizeListener);
         table.remove();
         potions.remove();
         world.dispatcher.remove(RoundController.TURN_STARTED, onTurn);
@@ -203,5 +213,13 @@ public class UiController extends WorldController {
     public void disableActionButtons() {
         abilities.setTouchable(Touchable.disabled);
         potions.setTouchable(Touchable.disabled);
+    }
+
+    private void layoutSafeArea() {
+        float topInset = SafeArea.top(world.stage);
+        table.padTop(topInset).padLeft(SafeArea.left(world.stage)).padRight(SafeArea.right(world.stage));
+        potions.padTop(topInset + 2).padLeft(1 + SafeArea.left(world.stage)).padRight(1 + SafeArea.right(world.stage));
+        table.invalidateHierarchy();
+        potions.invalidateHierarchy();
     }
 }

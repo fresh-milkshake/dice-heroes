@@ -25,7 +25,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
+        classpath 'com.android.tools.build:gradle:8.9.2'
     }
 }
 
@@ -79,7 +79,6 @@ project(":android") {
     dependencies {
         implementation fileTree(dir: '../main/libs', include: '*.jar')
         implementation project(":main")
-        implementation "com.google.android.gms:play-services-games:8.3.0"
         api "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"

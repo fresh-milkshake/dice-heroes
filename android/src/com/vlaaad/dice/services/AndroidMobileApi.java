@@ -31,15 +31,13 @@ import com.vlaaad.dice.api.IMobileApi;
 import com.vlaaad.dice.api.purchases.IPurchaseListener;
 import com.vlaaad.dice.api.services.IGameServices;
 import com.vlaaad.dice.game.config.purchases.PurchaseInfo;
-import com.vlaaad.dice.purchases.PurchaseHelper;
-import com.vlaaad.dice.util.IabResult;
 
 public class AndroidMobileApi implements IMobileApi {
     private IPurchaseListener listener;
 
     private final MainActivity activity;
     private final Array<PurchaseInfo> toSend = new Array<PurchaseInfo>();
-    public final Array<String> fails = new Array<String>();
+    private final IGameServices gameServices = new AndroidGameServices();
 
     private boolean versionCodeInitialized = false;
     private int versionCode;
@@ -61,16 +59,9 @@ public class AndroidMobileApi implements IMobileApi {
         return versionCode;
     }
 
-    @Override public void purchase(final PurchaseInfo info) {
-        final PurchaseHelper helper = activity.getPurchaseHelper();
-        if (helper != null) {
-            try {
-                helper.launchPurchaseFlow(info);
-            } catch (Exception ignored) {
-                fails.add("ui-iab-failed");
-                notifyListener();
-            }
-        }
+    @Override public void purchase(PurchaseInfo info) {
+        toSend.add(info);
+        notifyListener();
     }
 
     @Override public void share(String message) {
@@ -85,27 +76,13 @@ public class AndroidMobileApi implements IMobileApi {
         notifyListener();
     }
 
-
-    public void onConsumed(IabResult result, PurchaseInfo info) {
-        if (result.isSuccess()) {
-            toSend.add(info);
-        } else {
-            fails.add(result.getMessage());
-        }
-        notifyListener();
-    }
-
-    public void notifyListener() {
+    private void notifyListener() {
         if (listener == null)
             return;
         for (PurchaseInfo info : toSend) {
             listener.onPurchase(info);
         }
         toSend.clear();
-        for (String message : fails) {
-            listener.onPurchaseFailed(message);
-        }
-        fails.clear();
     }
 
     @Override public void rateApp() {
@@ -136,7 +113,6 @@ public class AndroidMobileApi implements IMobileApi {
     }
 
     @Override public IGameServices services() {
-        return activity.getGameServicesHelper();
+        return gameServices;
     }
-
 }

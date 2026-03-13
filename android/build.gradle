@@ -1,64 +1,78 @@
+def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs").get().asFile
+def hasReleaseSigning =
+    project.hasProperty("diceHeroesReleaseStoreFile") &&
+    project.hasProperty("diceHeroesReleaseStorePassword") &&
+    project.hasProperty("diceHeroesReleaseKeyAlias") &&
+    project.hasProperty("diceHeroesReleaseKeyPassword")
+
 android {
-    buildToolsVersion "33.0.0"
-    compileSdkVersion 33
+    namespace "com.vlaaad.dice"
+    compileSdk 35
+
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['libs']
+            jniLibs.srcDirs = [generatedJniLibsDir]
         }
     }
-    packagingOptions {
-        exclude 'META-INF/robovm/ios/robovm.xml'
+
+    packaging {
+        resources {
+            excludes += ['META-INF/robovm/ios/robovm.xml']
+        }
     }
+
     defaultConfig {
         applicationId "com.vlaaad.dice"
-        minSdkVersion 14
-        targetSdkVersion 33
+        minSdk 14
+        targetSdk 35
         versionCode 40
         versionName "4.1"
     }
 
-
-    signingConfigs {
-        release {
-            storeFile file("../key.store")
-            storePassword diceHeroesKeystorePassword
-            keyAlias "dice heroes key"
-            keyPassword diceHeroesDicePassword
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(project.property("diceHeroesReleaseStoreFile"))
+                storePassword project.property("diceHeroesReleaseStorePassword")
+                keyAlias project.property("diceHeroesReleaseKeyAlias")
+                keyPassword project.property("diceHeroesReleaseKeyPassword")
+            }
+        }
+    }
 
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
-            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
-// called every time gradle gets executed, takes the native dependencies of
-// the natives configuration, and extracts them to the proper libs/ folders
-// so they get packed with the APK.
-task copyAndroidNatives {
-    doFirst {
-        file("libs/armeabi-v7a/").mkdirs()
-        file("libs/arm64-v8a/").mkdirs()
-        file("libs/x86_64/").mkdirs()
-        file("libs/x86/").mkdirs()
+
+tasks.register("extractAndroidNatives") {
+    outputs.dir(generatedJniLibsDir)
+    doLast {
+        delete(generatedJniLibsDir)
+        generatedJniLibsDir.mkdirs()
 
         configurations.natives.copy().files.each { jar ->
             def outputDir = null
-            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
-            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
-            if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
-            if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
-            if(outputDir != null) {
+            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = new File(generatedJniLibsDir, "arm64-v8a")
+            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = new File(generatedJniLibsDir, "armeabi-v7a")
+            if (jar.name.endsWith("natives-x86_64.jar")) outputDir = new File(generatedJniLibsDir, "x86_64")
+            if (jar.name.endsWith("natives-x86.jar")) outputDir = new File(generatedJniLibsDir, "x86")
+            if (outputDir != null) {
                 copy {
                     from zipTree(jar)
                     into outputDir
@@ -69,13 +83,11 @@ task copyAndroidNatives {
     }
 }
 
-tasks.whenTaskAdded { packageTask ->
-    if (packageTask.name.contains("merge") && packageTask.name.contains("JniLibFolders")) {
-        packageTask.dependsOn 'copyAndroidNatives'
-    }
+tasks.named("preBuild").configure {
+    dependsOn("extractAndroidNatives")
 }
 
-task run(type: Exec) {
+tasks.register("run", Exec) {
     def path
     def localProperties = project.file("../local.properties")
     if (localProperties.exists()) {
@@ -87,10 +99,14 @@ task run(type: Exec) {
         if (sdkDir) {
             path = sdkDir
         } else {
-            path = "$System.env.ANDROID_HOME"
+            path = System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")
         }
     } else {
-        path = "$System.env.ANDROID_HOME"
+        path = System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")
+    }
+
+    if (path == null) {
+        throw new GradleException("Android SDK path is not configured. Set local.properties sdk.dir or ANDROID_SDK_ROOT.")
     }
 
     def adb = path + "/platform-tools/adb"

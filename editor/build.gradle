@@ -24,7 +24,7 @@ sourceSets.main.java.srcDirs = []
 sourceSets.main.scala.srcDirs = [ "src/" ]
 
 task run(dependsOn: classes, type: JavaExec) {
-    main "com.vlaaad.dice.editor.DiceEditor"
+    mainClass.set("com.vlaaad.dice.editor.DiceEditor")
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
     workingDir "../android/assets"
